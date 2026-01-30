@@ -31,3 +31,6 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
+// Expose game globally for debugging
+window.game = game;

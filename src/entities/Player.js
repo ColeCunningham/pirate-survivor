@@ -41,6 +41,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     this.body.setSize(48, 32);
     this.body.setOffset(8, 16);
+
+    // Render above gems and enemies
+    this.setDepth(10);
   }
 
   update(cursors, wasd, delta) {

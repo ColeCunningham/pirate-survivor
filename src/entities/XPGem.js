@@ -20,10 +20,23 @@ export default class XPGem extends Phaser.Physics.Arcade.Sprite {
   }
 
   spawn(x, y, value) {
+    // Kill any lingering tweens from previous life
+    this.scene.tweens.killTweensOf(this);
+
     this.setPosition(x, y);
     this.setActive(true);
     this.setVisible(true);
-    this.setVelocity(0, 0);  // Reset velocity from previous use
+    this.setVelocity(0, 0);
+
+    // Ensure physics body is enabled and reset
+    if (this.body) {
+      this.body.enable = true;
+      this.body.reset(x, y);
+    }
+
+    // Set consistent depth (below player)
+    this.setDepth(5);
+
     this.xpValue = value;
     this.isBeingAttracted = false;
 

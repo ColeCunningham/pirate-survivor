@@ -36,6 +36,9 @@ export default class GameScene extends Phaser.Scene {
       this.xpGems.add(gem);
     }
 
+    // Queue to track gem spawn order (FIFO)
+    this.activeGemQueue = [];
+
     // Game state
     this.gameTime = 0;
     this.kills = 0;
@@ -133,8 +136,22 @@ export default class GameScene extends Phaser.Scene {
   onPlayerCollectXP(player, gem) {
     if (!gem.active) return;
 
+    // Remove from spawn order queue
+    const index = this.activeGemQueue.indexOf(gem);
+    if (index > -1) this.activeGemQueue.splice(index, 1);
+
+    // Kill any active tweens on this gem
+    this.tweens.killTweensOf(gem);
+
+    // Fully deactivate
     gem.setActive(false);
     gem.setVisible(false);
+    gem.setVelocity(0, 0);
+
+    // Disable physics body
+    if (gem.body) {
+      gem.body.enable = false;
+    }
 
     const leveledUp = player.addXP(gem.xpValue || 1);
     if (leveledUp) {
@@ -147,11 +164,24 @@ export default class GameScene extends Phaser.Scene {
     let gem = this.xpGems.getFirstDead(false);
 
     if (!gem) {
-      gem = new XPGem(this, 0, 0);
-      this.xpGems.add(gem);
+      if (this.xpGems.getLength() >= this.xpGems.maxSize) {
+        // Pool full - recycle oldest gem (FIFO)
+        gem = this.activeGemQueue.shift();
+        if (gem) {
+          this.tweens.killTweensOf(gem);
+          gem.setVelocity(0, 0);
+          if (gem.body) gem.body.enable = false;
+        }
+      }
+
+      if (!gem) {
+        gem = new XPGem(this, 0, 0);
+        this.xpGems.add(gem);
+      }
     }
 
     gem.spawn(enemy.x, enemy.y, enemy.xpValue || 1);
+    this.activeGemQueue.push(gem);
 
     // Deactivate enemy
     enemy.setActive(false);
